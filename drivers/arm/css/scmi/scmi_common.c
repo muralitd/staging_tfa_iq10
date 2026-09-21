@@ -185,7 +185,7 @@ void *scmi_init(scmi_channel_t *ch)
 	assert(ch && ch->info);
 	assert(ch->info->db_reg_addr);
 	assert(ch->info->db_modify_mask);
-	assert(ch->info->db_preserve_mask);
+	/* db_preserve_mask may legitimately be 0 for write-1-to-set registers */
 	assert(ch->info->ring_doorbell != NULL);
 
 	assert(ch->lock);
@@ -208,6 +208,7 @@ void *scmi_init(scmi_channel_t *ch)
 
 	VERBOSE("SCMI power domain protocol version 0x%x detected\n", version);
 
+#if !SCMI_SKIP_SYS_PWR_PROTO_CHECK
 	ret = scmi_proto_version(ch, SCMI_SYS_PWR_PROTO_ID, &version);
 	if ((ret != SCMI_E_SUCCESS)) {
 		WARN("SCMI system power protocol version message failed\n");
@@ -222,6 +223,7 @@ void *scmi_init(scmi_channel_t *ch)
 
 	VERBOSE("SCMI system power management protocol version 0x%x detected\n",
 						version);
+#endif /* !SCMI_SKIP_SYS_PWR_PROTO_CHECK */
 
 	INFO("SCMI driver initialized\n");
 

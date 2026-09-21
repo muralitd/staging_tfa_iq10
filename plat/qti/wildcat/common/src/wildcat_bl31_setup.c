@@ -123,33 +123,26 @@ static bool qti_aux_param_handler(struct bl_aux_param_header *param)
 	}
 }
 
-void qti_el3_sys_regs_init(void) /* NEEDSWORK */
-{
-	/* can be implemented in bl31qtilib */
-	/* Enable MPAM if it is supported */
-	/*
-	 * Enables the system register interface for interrupt management for
-	 * El3 and El1 (gic v3)
-	 */
-	/* EL3 SRE Setting */
-	write_icc_sre_el3(0x9U | read_icc_sre_el3());
+/*
+ * plat_qti_cpu_boot_setup - per-core EL3 register initialisation.
+ *
+ * Implemented in the CPU-specific file selected by platform.mk:
+ *   QTI_NCC_CPU=1 -> plat/qti/cpu/ncc/src/bl31_cpu_setup.c
+ *   QTI_NCC_CPU=0 -> plat/qti/cpu/arm/src/bl31_cpu_setup.c
+ *
+ * Called from plat_reset_handler() for every CPU reset (boot and secondary).
+ */
+extern void plat_qti_cpu_boot_setup(void);
 
-	/* Set PMHE & IDbits to 24 bits */
-	write_icc_ctlr_el3(0xCC40);
-
-	/* EL1 SRE Setting */
-	write_icc_sre_el1(0x1U | read_icc_sre_el1());
-
-	/* PC DEBUG:: Setting ICC_IGRPEN0_EL1 to 1 */
-	write_icc_igrpen0_el1(1);
-
-	/* Clear SCTLR_EL2 */
-}
-
-void plat_qti_cpu_boot_setup(void)
-{
-	qti_el3_sys_regs_init();
-}
+#if QTI_NCC_CPU
+/*
+ * plat_qti_ncc_boot_core_setup - NCC boot-core CL4 sleep-state workaround.
+ *
+ * Implemented in plat/qti/cpu/ncc/src/bl31_cpu_setup.c.
+ * Called once from bl31_early_platform_setup() on the boot core only.
+ */
+extern void plat_qti_ncc_boot_core_setup(void);
+#endif /* QTI_NCC_CPU */
 
 /*******************************************************************************
  * Perform any BL31 early platform setup common to ARM standard platforms.
@@ -163,6 +156,22 @@ void bl31_early_platform_setup(u_register_t from_bl2,
 			       u_register_t plat_params_from_bl2)
 {
 	g_qti_cpu_cntfrq = PLAT_SYSCNT_FREQ;
+
+	/* Initialise the generic delay timer early; used by all subsystems. */
+	generic_delay_timer_init();
+
+#if QTI_NCC_CPU
+	/*
+	 * NCC boot-core CL4 sleep-state reset workaround via SCMI Reset
+	 * Domain Management protocol.  This is a one-time operation on the
+	 * boot core only; secondary cores must not execute this path.
+	 *
+	 * plat_qti_cpu_boot_setup() (EL3 register init) is called for every
+	 * core from plat_reset_handler() and must not be called here.
+	 */
+	plat_qti_ncc_boot_core_setup();
+#endif /* QTI_NCC_CPU */
+
 
 	/*
 	 * Dynamic CPU feature enablement handoff (XBL -> TF-A BL31)

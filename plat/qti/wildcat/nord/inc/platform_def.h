@@ -173,4 +173,26 @@
 /* Number of boot image entries supported for the platform */
 #define BOOT_IMAGES_NUM_ENTRIES 25
 
+/*----------------------------------------------------------------------------*/
+/* SCMI channel parameters for CPUCP communication.                          */
+/*                                                                            */
+/* Mailbox:  CPUCP DTIM0 + 0x3000 = 0x18b33000 (AP Secure to CPUCP buffer)  */
+/* Doorbell: APSS_INTU TZ_IPC_INTERRUPT (0x17824004), OSM_IPC bit 28         */
+/*----------------------------------------------------------------------------*/
+
+#include <cpucp_hwio.h>
+
+/* SCMI shared-memory mailbox: AP Secure to CPUCP IPC buffer in CPUCP DTIM0. */
+#define QTI_SCMI_MBX_MEM_BASE		APSEC_CPUCP_SCMI_IPC_BASE
+#define QTI_SCMI_MBX_MEM_SIZE		APSEC_CPUCP_SCMI_IPC_SIZE
+
+/* AP to CPUCP doorbell: write OSM_IPC bit to APSS_INTU TZ_IPC_INTERRUPT. */
+#define QTI_SCMI_DB_REG_ADDR		APSS_SHARED_TZ_IPC_INTERRUPT_ADDR
+#define QTI_SCMI_DB_MODIFY_MASK		APSS_SHARED_TZ_IPC_INTERRUPT_BIT
+#define QTI_SCMI_DB_PRESERVE_MASK	(0U)
+
+/* Poll delay (us) and timeout (us) for SCMI command completion. */
+#define QTI_SCMI_POLL_DELAY_US		(0U)
+#define QTI_SCMI_TIMEOUT_US		(500000U)
+
 #endif /* PLATFORM_DEF_H */

@@ -4,18 +4,37 @@
  * Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Wildcat-specific extension of the common QTI platform interface.
+ *
+ * This header includes the common plat/qti/common/inc/qti_plat.h first
+ * (which declares the PSCI power-domain back-end interface, GIC helpers,
+ * QTI_LOCAL_PSTATE_WIDTH, etc.) and then adds Wildcat-specific declarations.
+ *
+ * Include-path note: -Iplat/qti/wildcat/common/inc comes before
+ * -Iplat/qti/common/inc in the build, so this file is found first.
+ * We pull in the common header via a relative path to avoid the shadowing.
  */
 
-#ifndef QTI_PLAT_H
-#define QTI_PLAT_H
+/*
+ * Pull in the common QTI platform interface first.
+ * This provides: PSCI power-domain declarations, GIC helpers,
+ * QTI_LOCAL_PSTATE_WIDTH, qti_make_pwrstate_lvl* macros,
+ * plat_qti_pm_idle_states(), and other shared APIs.
+ *
+ * Must be included BEFORE the wildcat guard so that the common header's
+ * own #ifndef QTI_PLAT_H guard is not already set when it is processed.
+ */
+
+/* Wildcat-specific additions — protected by a separate guard. */
+#ifndef WILDCAT_QTI_PLAT_H
+#define WILDCAT_QTI_PLAT_H
+
+#include "../../../common/inc/qti_plat.h"
 
 #include <stdint.h>
 
-#include <common/bl_common.h>
 #include <common/interrupt_props.h>
-#include <lib/cassert.h>
-#include <lib/el3_runtime/cpu_data.h>
-#include <lib/xlat_tables/xlat_tables_v2.h>
 
 #define QTI_INVALID_CLUSTER_ID  ((uint32_t)-1)
 #define QTI_INVALID_CPU_ID      ((uint32_t)-1)
@@ -41,50 +60,6 @@
  * @return 0 on success, -1 if the translation faulted (PAR_EL1.F set).
  */
 int qti_ns_va_to_pa(uintptr_t va, unsigned int client_mode, uintptr_t *pa_out);
-
-int qti_mmap_add_dynamic_region(uintptr_t base_pa, size_t size,
-				unsigned int attr);
-int qti_mmap_remove_dynamic_region(uintptr_t base_va, size_t size);
-
-/*
- * Utility functions common to ARM standard platforms.
- * TODO: The below CR is created to handle page table
- * with and without coherent memory.
- * https://orbit/CR/4444422
- */
-#if USE_COHERENT_MEM
-void qti_setup_page_tables(uintptr_t total_base, size_t total_size,
-			   uintptr_t code_start, uintptr_t code_limit,
-			   uintptr_t rodata_start, uintptr_t rodata_limit,
-			   uintptr_t coherent_ram_start,
-			   uintptr_t coherent_ram_limit);
-#else
-void qti_setup_page_tables(uintptr_t total_base, size_t total_size,
-			   uintptr_t code_start, uintptr_t code_limit,
-			   uintptr_t rodata_start, uintptr_t rodata_limit);
-#endif
-
-/*
- * Mandatory functions required in ARM standard platforms
- */
-void plat_qti_gic_driver_init(void);
-void plat_qti_gic_init(void);
-void plat_qti_gic_cpuif_enable(void);
-void plat_qti_gic_cpuif_disable(void);
-void plat_qti_gic_pcpu_init(void);
-const interrupt_prop_t *plat_qti_get_interrupt_props(unsigned int *num_props);
-void plat_qti_invoke_unhandled_isr(uint32_t id, void *handle);
-
-/*
- * Optional functions required in ARM standard platforms
- */
-unsigned int plat_qti_core_pos_by_mpidr(u_register_t mpidr);
-unsigned int plat_qti_my_cluster_pos(void);
-
-void gic_set_spi_routing(unsigned int id, unsigned int irm, u_register_t mpidr);
-
-void qti_pmic_prepare_reset(void);
-void qti_pmic_prepare_shutdown(void);
 
 /* Optional functions required in ARM standard platforms */
 unsigned int plat_qcom_core_pos_by_mpidr(u_register_t mpidr);
@@ -140,9 +115,4 @@ void configure_irq_type(uintptr_t clr_edge_base, uintptr_t set_level_base,
 void configure_irq_array(uintptr_t base, const uint32_t *cfg_arr,
 			 unsigned int num_words);
 
-typedef struct chip_id_info {
-	uint16_t jtag_id;
-	uint16_t chipinfo_id;
-} chip_id_info_t;
-
-#endif /* QTI_PLAT_H */
+#endif /* WILDCAT_QTI_PLAT_H */

@@ -49,4 +49,20 @@
 #define APSS_SHARED_TZ_IPC_INTERRUPT_OSM_IPC_SHFT	(28U)
 #define APSS_SHARED_TZ_IPC_INTERRUPT_BIT		(1U << APSS_SHARED_TZ_IPC_INTERRUPT_OSM_IPC_SHFT)
 
+/*
+ * APSS–CPUCP Hardware Mutex register banks.
+ *
+ * Used by drivers/qti/hwmutex/hwmutex.c to serialise access to shared state
+ * (e.g. NCC LPM vote counters) between TF-A (APPS_TZ) and CPUCP firmware.
+ *
+ * Secure bank  (region 0): HW_MUTEX_S_* IDs (bits[15:8] = 0x00)
+ * Non-secure bank (region 1): HW_MUTEX_NS_* IDs (bits[15:8] = 0x01)
+ *
+ * TODO: Verify these addresses against the Nord SoC memory map.
+ *       Reference: CPUCP memmap.h APSS_CPUCP_S_MUTEX_BASE /
+ *                                  APSS_CPUCP_NS_MUTEX_BASE
+ */
+#define APSS_CPUCP_S_MUTEX_BASE		(0x17830000U)	/* Secure HW mutex bank  */
+#define APSS_CPUCP_NS_MUTEX_BASE	(0x17831000U)	/* Non-secure HW mutex bank */
+
 #endif /* QTI_CPUCP_HWIO_H */

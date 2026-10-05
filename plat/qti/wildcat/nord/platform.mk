@@ -110,31 +110,40 @@ QTI_EXTERNAL_INCLUDES	:=	-I${QTI_PLAT_PATH}/${CHIPSET}/inc			\
 				-I${QTI_PLAT_PATH}/common/inc/$(ARCH)			\
 				-I${PLAT_QTI_ROOT}/common/inc/$(ARCH)			\
 				-I${PLAT_QTI_ROOT}/cpu/inc				\
+				-I${PLAT_QTI_ROOT}/cpu/ncc/include			\
 				-I${QTI_PLAT_PATH}/bl31qtilib/inc			\
 				-I${PLAT_QTI_ROOT}/common/inc				\
 
 QTI_BL31_SOURCES	:=	$(QTI_PLAT_PATH)/common/src/$(ARCH)/qti_helpers.S	\
-				$(PLAT_QTI_ROOT)/common/src/$(ARCH)/qti_uart_console.S	\
-				$(PLAT_QTI_ROOT)/common/src/$(ARCH)/qti_ringbuf_console.S	\
-				$(PLAT_QTI_ROOT)/common/src/qti_ringbuf_console_helper.c	\
-				$(QTI_PLAT_PATH)/common/src/$(ARCH)/qti_pauth.c         \
-				$(QTI_PLAT_PATH)/common/src/$(ARCH)/qti_unhandled_exception_asm.S \
-				$(PLAT_QTI_ROOT)/common/src/qti_stack_protector.c	\
-				$(QTI_PLAT_PATH)/common/src/wildcat_bl31_setup.c	\
-				$(QTI_PLAT_PATH)/common/src/wildcat_common.c		\
-				$(PLAT_QTI_ROOT)/common/src/qti_gic_v3.c		\
-				$(PLAT_QTI_ROOT)/common/src/qti_interrupt_svc.c		\
-				$(QTI_PLAT_PATH)/common/src/qti_syscall.c		\
-				$(QTI_PLAT_PATH)/common/src/qti_secure_io.c		\
-				$(QTI_PLAT_PATH)/common/src/qti_err_log.c		\
-				$(QTI_PLAT_PATH)/common/src/qti_tlb.c			\
-				$(QTI_PLAT_PATH)/common/src/qti_topology.c		\
-				$(QTI_PLAT_PATH)/common/src/qti_pm.c			\
-				$(QTI_PLAT_PATH)/common/src/qti_rng.c			\
-				$(PLAT_QTI_ROOT)/common/src/spmi_arb.c			\
-				$(QTI_PLAT_PATH)/bl31qtilib/src/bl31qtilib_cb_interface.c	\
-				$(QTI_PLAT_PATH)/common/src/qti_plat_helpers.c \
-				drivers/qti/crypto/rng.c
+			$(PLAT_QTI_ROOT)/common/src/$(ARCH)/qti_uart_console.S	\
+			$(PLAT_QTI_ROOT)/common/src/$(ARCH)/qti_ringbuf_console.S	\
+			$(PLAT_QTI_ROOT)/common/src/qti_ringbuf_console_helper.c	\
+			$(QTI_PLAT_PATH)/common/src/$(ARCH)/qti_pauth.c         \
+			$(QTI_PLAT_PATH)/common/src/$(ARCH)/qti_unhandled_exception_asm.S \
+			$(PLAT_QTI_ROOT)/common/src/qti_stack_protector.c	\
+			$(QTI_PLAT_PATH)/common/src/wildcat_bl31_setup.c	\
+			$(QTI_PLAT_PATH)/common/src/wildcat_common.c		\
+			$(PLAT_QTI_ROOT)/common/src/qti_gic_v3.c		\
+			$(PLAT_QTI_ROOT)/common/src/qti_interrupt_svc.c		\
+			$(QTI_PLAT_PATH)/common/src/qti_syscall.c		\
+			$(QTI_PLAT_PATH)/common/src/qti_secure_io.c		\
+			$(QTI_PLAT_PATH)/common/src/qti_err_log.c		\
+			$(QTI_PLAT_PATH)/common/src/qti_tlb.c			\
+			$(QTI_PLAT_PATH)/common/src/qti_topology.c		\
+			$(QTI_PLAT_PATH)/common/src/qti_rng.c			\
+			$(PLAT_QTI_ROOT)/common/src/spmi_arb.c			\
+			$(QTI_PLAT_PATH)/bl31qtilib/src/bl31qtilib_cb_interface.c	\
+			$(QTI_PLAT_PATH)/common/src/qti_plat_helpers.c \
+			drivers/qti/crypto/rng.c
+
+#
+# PSCI ops wrapper: use the common qti_pm.c which calls plat_qti_pwr_*
+# hooks implemented in plat/qti/cpu/ncc/src/qcom_ncc_psci.c.
+# (plat/qti/wildcat/common/src/qti_pm.c uses bl31qtilib_* and is NOT
+# used for NCC targets.)
+#
+QTI_BL31_SOURCES	+=	$(PLAT_QTI_ROOT)/common/src/qti_pm.c		\
+				$(PLAT_QTI_ROOT)/common/src/pm_ps_hold.c
 
 
 # Ensure Widevine is not being used
@@ -198,6 +207,8 @@ QTI_CPU_PATH		:=	plat/qti/cpu
 ifeq ($(QTI_NCC_CPU),1)
 $(eval $(call add_define,QTI_NCC_CPU))
 BL31_CPU_SETUP_SRC	:=	$(QTI_CPU_PATH)/ncc/src/bl31_cpu_setup.c
+# NCC PSCI platform hooks (plat_qti_pwr_* back-end for qti_pm.c)
+BL31_SOURCES		+=	$(QTI_CPU_PATH)/ncc/src/qcom_ncc_psci.c
 else
 BL31_CPU_SETUP_SRC	:=	$(QTI_CPU_PATH)/arm/src/bl31_cpu_setup.c
 endif
@@ -213,9 +224,19 @@ endif
 SCMI_SKIP_SYS_PWR_PROTO_CHECK	:= 1
 $(eval $(call add_define,SCMI_SKIP_SYS_PWR_PROTO_CHECK))
 
+#
+# Hardware Mutex (HWMUTEX) driver.
+# Pulls in hwmutex.c (low-level acquire/release) and hwm_lock.c
+# (ticket-lock + LPM-sync lock).  Also adds the hwmutex public header
+# directories to PLAT_INCLUDES via hwmutex.mk.
+#
+include drivers/qti/hwmutex/hwmutex.mk
+
 SCMI_SOURCES		:=	drivers/arm/css/scmi/scmi_common.c		\
-				drivers/arm/css/scmi/scmi_reset_domain_proto.c	\
-				$(PLAT_QTI_ROOT)/common/src/qti_scmi_doorbell.c
+			drivers/arm/css/scmi/scmi_pwr_dmn_proto.c	\
+			drivers/arm/css/scmi/scmi_reset_domain_proto.c	\
+			$(PLAT_QTI_ROOT)/common/src/qti_scmi_doorbell.c	\
+			$(QTI_CPU_PATH)/ncc/src/ncc_cpu_power.c
 
 BL31_SOURCES		+=	${QTI_BL31_SOURCES}				\
 				${GIC_SOURCES}					\
@@ -225,6 +246,7 @@ BL31_SOURCES		+=	${QTI_BL31_SOURCES}				\
 				${SCMI_SOURCES}
 
 BL31_SOURCES		+=	${QGIC_DRV_PATH}/qgic_intr_el3.c
+BL31_SOURCES		+=	drivers/qti/sec_core/sec_core_stub.c
 BL31_SOURCES		+=	$(QTI_PLAT_PATH)/${CHIPSET}/src/plat_cpuss_config.c
 
 PLAT_INCLUDES	+=	-Iinclude/drivers/qti/qtimer/${CHIPSET}

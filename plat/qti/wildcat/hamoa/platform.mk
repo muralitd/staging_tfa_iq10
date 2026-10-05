@@ -5,6 +5,7 @@
 
 QTI_PLAT_PATH	:= plat/qti/wildcat
 QTI_COMMON_PATH	:= plat/qti/common
+QTI_CPU_PATH	:= plat/qti/cpu
 CHIPSET		:= hamoa
 PLATFORM	:= hamoa
 
@@ -130,11 +131,20 @@ QTI_BL31_SOURCES :=						\
 	$(QTI_PLAT_PATH)/common/src/qti_err_log.c		\
 	$(QTI_PLAT_PATH)/common/src/qti_tlb.c			\
 	$(QTI_PLAT_PATH)/common/src/qti_topology.c		\
-	$(QTI_PLAT_PATH)/common/src/qti_pm.c			\
 	$(QTI_PLAT_PATH)/common/src/qti_rng.c			\
 	$(QTI_COMMON_PATH)/src/spmi_arb.c			\
 	$(QTI_PLAT_PATH)/bl31qtilib/src/bl31qtilib_cb_interface.c \
 	$(QTI_PLAT_PATH)/common/src/qti_plat_helpers.c
+
+#
+# PSCI ops: use the common qti_pm.c (architecture-agnostic PSCI ops table)
+# with the NCC PSCI stub back-end (no LPM yet for Hamoa).
+# When LPM is enabled, replace qcom_ncc_psci_stub.c with qcom_ncc_psci.c.
+#
+QTI_BL31_SOURCES +=						\
+	$(QTI_COMMON_PATH)/src/qti_pm.c			\
+	$(QTI_CPU_PATH)/ncc/src/qcom_ncc_psci_stub.c		\
+	drivers/qti/sec_core/sec_core_stub.c
 
 # Ensure Widevine is not being used
 ifeq ($(CROS_WIDEVINE_SMC),0)
@@ -205,6 +215,15 @@ BL31_SOURCES +=	drivers/qti/qtimer/qtimer.c \
 			$(QTI_PLAT_PATH)/common/src/qti_qtimer_platform.c
 
 PLAT_INCLUDES += -Iinclude/drivers/qti/watchdog/${CHIPSET}
+PLAT_INCLUDES += -Iinclude/drivers/qti/cpucp/${CHIPSET}
+
+#
+# Hardware Mutex (HWMUTEX) driver.
+# Pulls in hwmutex.c (low-level acquire/release) and hwm_lock.c
+# (ticket-lock + LPM-sync lock).  Also adds the hwmutex public header
+# directories to PLAT_INCLUDES via hwmutex.mk.
+#
+include drivers/qti/hwmutex/hwmutex.mk
 
 BL31_SOURCES +=	drivers/qti/watchdog/watchdog.c \
 			drivers/qti/watchdog/v2/watchdog_ver.c \

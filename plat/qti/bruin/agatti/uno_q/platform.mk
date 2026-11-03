@@ -63,7 +63,6 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 				drivers/qti/qtimer/qtimer.c				\
 				drivers/qti/sec_core/sec_core.c				\
 				drivers/qti/sec_core/${CHIPSET}/sec_core_cfg.c		\
-				drivers/qti/watchdog/watchdog_stub.c			\
 				plat/common/plat_gicv3.c				\
 				${GICV3_SOURCES}					\
 				plat/common/plat_psci_common.c				\
@@ -84,3 +83,5 @@ BL31_SOURCES		+=	drivers/delay_timer/delay_timer.c			\
 
 include drivers/qti/smem/smem.mk
 include drivers/qti/chipinfo/chipinfo.mk
+
+include drivers/qti/watchdog/watchdog.mk

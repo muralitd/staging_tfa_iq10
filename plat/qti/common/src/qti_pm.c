@@ -147,6 +147,7 @@ static void qti_node_power_off(const psci_power_state_t *target_state)
 	plat_qti_pwr_domain_off((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
+		plat_qti_set_cpupwrctlr_val();
 	}
 }
 
@@ -155,6 +156,7 @@ static void qti_node_suspend(const psci_power_state_t *target_state)
 	plat_qti_pwr_domain_suspend((const uint8_t *)target_state->pwr_domain_state);
 	if (is_cpu_off(target_state)) {
 		plat_qti_gic_cpuif_disable();
+		plat_qti_set_cpupwrctlr_val();
 	}
 }
 

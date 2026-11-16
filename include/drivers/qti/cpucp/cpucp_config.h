@@ -12,6 +12,7 @@
 
 #include <cpucp_hwio.h>
 #include <cpucp_shared.h>
+#include <drivers/arm/css/scmi.h>
 
 #define SHARED(member)	(CPUCP_SHARED_DATA_BASE + \
 			 offsetof(struct cpucp_shared_data, member))

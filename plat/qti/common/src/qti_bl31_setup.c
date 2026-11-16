@@ -134,6 +134,12 @@ void plat_cpuss_config(void)
 {
 }
 
+#pragma weak plat_qti_cpu_boot_cluster_reset
+
+void plat_qti_cpu_boot_cluster_reset(void )
+{
+}
+
 /*******************************************************************************
  * Perform any BL31 platform setup common to ARM standard platforms
  ******************************************************************************/

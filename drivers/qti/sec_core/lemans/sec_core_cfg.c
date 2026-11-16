@@ -47,7 +47,7 @@ const uintptr_t qti_sec_core_rvbaraddr_lo = APSS_SHARED_KRYO_RVBARADDR_LO_ADDR;
 const uintptr_t qti_sec_core_rvbaraddr_hi = APSS_SHARED_KRYO_RVBARADDR_HI_ADDR;
 
 /*
- * RVBAR address shift offsets for Le Mans.
+ * RVBAR address shift offsets for Lemans.
  * The LO register holds bits [33:2] of the physical address (addr >> 2).
  * The HI register holds bits [65:34] of the physical address (addr >> 34).
  */
